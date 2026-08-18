@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Card, CardContent } from '../../../components/ui/card'
 import { Button } from '../../../components/ui/button'
 import { Input } from '../../../components/ui/input'
@@ -20,13 +20,29 @@ const typeLabels: Record<string, string> = {
   reversal: 'Estorno',
 }
 
-export default function TransactionsTab() {
+interface TransactionsTabProps {
+  search?: string
+}
+
+export default function TransactionsTab({ search }: TransactionsTabProps) {
   const [showCreate, setShowCreate] = useState(false)
 
-  const { data: transactions = [], isLoading } = useFinancialTransactions()
+  const { data: allTransactions = [], isLoading } = useFinancialTransactions()
   const { data: categories = [] } = useFinancialCategories()
   const { data: costCenters = [] } = useCostCenters()
   const createTx = useCreateManualTransaction()
+
+  const transactions = useMemo(() => {
+    if (!allTransactions) return []
+    if (!search) return allTransactions
+    const q = search.toLowerCase()
+    return allTransactions.filter(
+      (tx) =>
+        tx.description.toLowerCase().includes(q) ||
+        (tx.direction === 'in' ? 'Entrada' : 'Saída').toLowerCase().includes(q) ||
+        (tx.typeLabels?.[tx.type] ?? tx.type).toLowerCase().includes(q)
+    )
+  }, [allTransactions, search])
 
   const [form, setForm] = useState({
     direction: 'out' as 'in' | 'out',

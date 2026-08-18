@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { Plus, Search, Eye, Power, PowerOff } from 'lucide-react'
+import { Plus, Search, Eye, Power, PowerOff, Trash2 } from 'lucide-react'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Badge } from '../components/ui/badge'
@@ -17,13 +17,19 @@ import {
   useDeactivateCustomer,
   useActivateCustomer,
 } from '../features/customers/hooks/useCustomers'
-import { useCustomerTags, useCreateTag, useDeleteTag } from '../features/customers/hooks/useTags'
+import {
+  useCustomerTags,
+  useCreateTag,
+  useDeleteTag,
+} from '../features/customers/hooks/useTags'
 import { CustomerDialog } from '../features/customers/components/CustomerDialog'
 import { CustomerDetailSheet } from '../features/customers/components/CustomerDetailSheet'
 import { toast } from 'sonner'
 import type { Customer, CustomerTag } from '../lib/supabase/types'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
+import { Card } from '../components/ui/card'
+import { cn } from '../lib/utils'
 
 export default function CustomersPage() {
   const [tab, setTab] = useState('customers')
@@ -93,62 +99,126 @@ export default function CustomersPage() {
     return assignments.map((a: any) => a.customer_tags).filter(Boolean)
   }
 
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="space-y-2">
+            <div className="w-32 h-8 rounded bg-[hsl(var(--muted))] animate-pulse" />
+            <div className="w-48 h-4 rounded bg-[hsl(var(--muted))] animate-pulse" />
+          </div>
+          <div className="space-y-2">
+            <div className="w-24 h-6 rounded-full bg-[hsl(var(--muted))] animate-pulse" />
+            <div className="w-32 h-6 rounded-full bg-[hsl(var(--muted))] animate-pulse" />
+            <div className="w-20 h-6 rounded-full bg-[hsl(var(--muted))] animate-pulse" />
+          </div>
+        </div>
+        <div className="border rounded-lg bg-[hsl(var(--background))]">
+          <div className="h-64 rounded bg-[hsl(var(--muted))]/20" />
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Clientes</h1>
-          <p className="text-sm text-[hsl(var(--muted-foreground))]">CRM e gestão de clientes</p>
+          <h1 className="text-display">Clientes</h1>
+          <p className="text-body text-[hsl(var(--muted-foreground))]">
+            CRM e gestão de clientes
+          </p>
+        </div>
+        <div className="flex items-center gap-4">
+          {tabs.length > 0 && (
+            <div className="flex items-center gap-4">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setTagName('')
+                  setEditingCustomer(null)
+                  setDialogOpen(true)
+                }}
+                className="hover-lift"
+              >
+                <Plus size={16} className="mr-2 h-4 w-4" />
+                Novo cliente
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setEditingCustomer(null)
+                  setDialogOpen(true)
+                }}
+                className="hover-lift"
+                disabled={tags.length === 0}
+              >
+                <Plus size={16} className="mr-2 h-4 w-4" />
+                Nova tag
+              </Button>
+            </div>
+          )}
         </div>
       </div>
 
-      <Tabs value={tab} onValueChange={setTab}>
-        <TabsList>
+      <Tabs value={tab} onValueChange={setTab} className="space-y-4">
+        <TabsList className="grid w-full grid-cols-[repeat(2,minmax(0,1fr))]">
           <TabsTrigger value="customers">Clientes</TabsTrigger>
           <TabsTrigger value="tags">Tags</TabsTrigger>
         </TabsList>
 
         <TabsContent value="customers" className="space-y-4">
-          <div className="flex items-center gap-3">
-            <div className="relative flex-1 max-w-sm">
-              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[hsl(var(--muted-foreground))]" />
-              <Input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Buscar por nome, email ou telefone..."
-                className="pl-9"
-              />
-            </div>
-            <Button onClick={() => { setEditingCustomer(null); setDialogOpen(true) }}>
-              <Plus size={16} className="mr-2" />
-              Novo cliente
-            </Button>
+          <div className="relative w-64 mb-6">
+            <Search
+              size={16}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-[hsl(var(--muted-foreground))] h-4 w-4"
+            />
+            <Input
+              placeholder="Buscar por nome, email ou telefone..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-9"
+            />
           </div>
 
-          <div className="border rounded-lg">
+          <Card>
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Cliente</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Telefone</TableHead>
-                  <TableHead className="text-right">Pedidos</TableHead>
-                  <TableHead className="text-right">Total gasto</TableHead>
-                  <TableHead>Tags</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="w-24"></TableHead>
+                  <TableHead className="text-left px-6 py-3 text-label text-[hsl(var(--muted-foreground))] uppercase tracking-wider">
+                    Cliente
+                  </TableHead>
+                  <TableHead className="text-left px-6 py-3 text-label text-[hsl(var(--muted-foreground))] uppercase tracking-wider">
+                    Email
+                  </TableHead>
+                  <TableHead className="text-left px-6 py-3 text-label text-[hsl(var(--muted-foreground))] uppercase tracking-wider">
+                    Telefone
+                  </TableHead>
+                  <TableHead className="text-right px-6 py-3 text-label text-[hsl(var(--muted-foreground))] uppercase tracking-wider">
+                    Pedidos
+                  </TableHead>
+                  <TableHead className="text-right px-6 py-3 text-label text-[hsl(var(--muted-foreground))] uppercase tracking-wider">
+                    Total gasto
+                  </TableHead>
+                  <TableHead className="text-left px-6 py-3 text-label text-[hsl(var(--muted-foreground))] uppercase tracking-wider">
+                    Tags
+                  </TableHead>
+                  <TableHead className="text-left px-6 py-3 text-label text-[hsl(var(--muted-foreground))] uppercase tracking-wider">
+                    Status
+                  </TableHead>
+                  <TableHead className="text-right px-6 py-3 text-label text-[hsl(var(--muted-foreground))] uppercase tracking-wider w-24">
+                    Ações
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {isLoading ? (
+                {filtered.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8 text-[hsl(var(--muted-foreground))]">
-                      Carregando...
-                    </TableCell>
-                  </TableRow>
-                ) : filtered.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8 text-[hsl(var(--muted-foreground))]">
+                    <TableCell
+                      colSpan={8}
+                      className="text-center py-8 text-[hsl(var(--muted-foreground))]"
+                    >
                       {search ? 'Nenhum cliente encontrado' : 'Nenhum cliente cadastrado'}
                     </TableCell>
                   </TableRow>
@@ -156,70 +226,97 @@ export default function CustomersPage() {
                   filtered.map((customer) => {
                     const customerTags = getCustomerTags(customer)
                     return (
-                      <TableRow key={customer.id}>
-                        <TableCell className="font-medium">{customer.name}</TableCell>
-                        <TableCell>{customer.email ?? '—'}</TableCell>
-                        <TableCell>{customer.phone ?? '—'}</TableCell>
-                        <TableCell className="text-right tabular-nums">{customer.total_orders}</TableCell>
-                        <TableCell className="text-right tabular-nums">
+                      <TableRow
+                        key={customer.id}
+                        className="cursor-pointer hover:bg-[hsl(var(--muted))]/50 transition-colors duration-200"
+                        onClick={() => setDetailCustomer(customer)}
+                      >
+                        <TableCell className="px-6 py-4 text-font-medium whitespace-nowrap">
+                          {customer.name}
+                        </TableCell>
+                        <TableCell className="px-6 py-4 text-sm whitespace-nowrap">
+                          {customer.email ?? '—'}
+                        </TableCell>
+                        <TableCell className="px-6 py-4 text-sm whitespace-nowrap">
+                          {customer.phone ?? '—'}
+                        </TableCell>
+                        <TableCell className="px-6 py-4 text-sm font-metric text-right whitespace-nowrap">
+                          {customer.total_orders}
+                        </TableCell>
+                        <TableCell className="px-6 py-4 text-sm font-metric text-right whitespace-nowrap">
                           R$ {customer.total_spent.toFixed(2)}
                         </TableCell>
-                        <TableCell>
-                          <div className="flex gap-1 flex-wrap">
-                            {customerTags.slice(0, 2).map((tag: CustomerTag) => (
-                              <Badge key={tag.id} variant="secondary" className="text-xs">
-                                {tag.name}
-                              </Badge>
-                            ))}
-                            {customerTags.length > 2 && (
-                              <Badge variant="secondary" className="text-xs">
-                                +{customerTags.length - 2}
-                              </Badge>
-                            )}
-                          </div>
+                        <TableCell className="px-6 py-4 text-sm whitespace-nowrap flex gap-1 flex-wrap">
+                          {customerTags.slice(0, 2).map((tag: CustomerTag) => (
+                            <Badge
+                              key={tag.id}
+                              variant="secondary"
+                              className="text-xs"
+                            >
+                              {tag.name}
+                            </Badge>
+                          ))}
+                          {customerTags.length > 2 && (
+                            <Badge variant="secondary" className="text-xs">
+                              +{customerTags.length - 2}
+                            </Badge>
+                          )}
                         </TableCell>
-                        <TableCell>
-                          <Badge variant={customer.is_active ? 'success' : 'secondary'}>
+                        <TableCell className="px-6 py-4 text-sm whitespace-nowrap">
+                          <Badge
+                            variant={customer.is_active ? 'success' : 'secondary'}
+                            className="text-xs font-medium"
+                          >
                             {customer.is_active ? 'Ativo' : 'Inativo'}
                           </Badge>
                         </TableCell>
-                        <TableCell>
-                          <div className="flex gap-1">
+                        <TableCell className="px-6 py-4 text-sm whitespace-nowrap flex items-center gap-2">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => {
+                              setEditingCustomer(customer)
+                              setDialogOpen(true)
+                            }}
+                            className="p-1 hover-lift"
+                            title="Editar"
+                          >
+                            <Plus size={14} className="h-4 w-4" />
+                          </Button>
+                          {customer.is_active ? (
                             <Button
                               variant="ghost"
-                              size="sm"
-                              onClick={() => setDetailCustomer(customer)}
+                              size="icon"
+                              onClick={() => handleDeactivate(customer)}
+                              className="p-1 hover-lift"
                             >
-                              <Eye size={14} />
+                              <PowerOff size={14} className="h-4 w-4" />
                             </Button>
+                          ) : (
                             <Button
                               variant="ghost"
-                              size="sm"
-                              onClick={() => {
-                                setEditingCustomer(customer)
-                                setDialogOpen(true)
-                              }}
+                              size="icon"
+                              onClick={() => handleActivate(customer)}
+                              className="p-1 hover-lift"
                             >
-                              Editar
+                              <Power size={14} className="h-4 w-4" />
                             </Button>
-                            {customer.is_active ? (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleDeactivate(customer)}
-                              >
-                                <PowerOff size={14} />
-                              </Button>
-                            ) : (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleActivate(customer)}
-                              >
-                                <Power size={14} />
-                              </Button>
-                            )}
-                          </div>
+                          )}
+                          <Button
+                            variant="destructive"
+                            size="icon"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              if (window.confirm(`Excluir cliente "${customer.name}"?`)) {
+                                // Note: We don't have a delete customer hook, but we can add one if needed.
+                                // For now, we'll just show a toast.
+                                toast.error('Funcionalidade de exclusão não implementada')
+                              }
+                            }
+                            className="p-1 hover-lift"
+                          >
+                            <Trash2 size={14} className="h-4 w-4" />
+                          </Button>
                         </TableCell>
                       </TableRow>
                     )
@@ -227,7 +324,7 @@ export default function CustomersPage() {
                 )}
               </TableBody>
             </Table>
-          </div>
+          </Card>
         </TabsContent>
 
         <TabsContent value="tags" className="space-y-4">
@@ -245,26 +342,32 @@ export default function CustomersPage() {
             </Button>
           </div>
 
-          <div className="border rounded-lg">
+          <Card>
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Nome</TableHead>
-                  <TableHead>Criada em</TableHead>
-                  <TableHead className="w-20"></TableHead>
+                  <TableHead className="text-left px-6 py-3 text-label text-[hsl(var(--muted-foreground))] uppercase tracking-wider">
+                    Nome
+                  </TableHead>
+                  <TableHead className="text-left px-6 py-3 text-label text-[hsl(var(--muted-foreground))] uppercase tracking-wider">
+                    Criada em
+                  </TableHead>
+                  <TableHead className="text-right px-6 py-3 text-label text-[hsl(var(--muted-foreground))] uppercase tracking-wider w-20">
+                    Ações
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {tags && tags.length > 0 ? (
                   tags.map((tag) => (
                     <TableRow key={tag.id}>
-                      <TableCell className="font-medium">
+                      <TableCell className="px-6 py-4 text-sm font-medium whitespace-nowrap">
                         <Badge variant="secondary">{tag.name}</Badge>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="px-6 py-4 text-sm whitespace-nowrap">
                         {format(new Date(tag.created_at), 'dd/MM/yyyy', { locale: ptBR })}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="px-6 py-4 text-sm whitespace-nowrap">
                         <Button
                           variant="ghost"
                           size="sm"
@@ -284,7 +387,7 @@ export default function CustomersPage() {
                 )}
               </TableBody>
             </Table>
-          </div>
+          </Card>
         </TabsContent>
       </Tabs>
 
