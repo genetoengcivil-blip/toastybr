@@ -211,3 +211,106 @@ describe('useOrdersRealtime integration with kitchen query (item 49)', () => {
     })
   })
 })
+
+describe('useOrdersRealtime - unstable options dependency regression (V3)', () => {
+  let queryClient: QueryClient
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    clientRef = createMockSupabaseClient()
+    queryClient = createTestQueryClient()
+  })
+
+  it('does NOT restart subscription when extraInvalidateKeys gets a new array reference (status rerender loop)', () => {
+    const { rerender, result } = renderHook(
+      ({ org }) =>
+        useOrdersRealtime(org, {
+          channelPrefix: 'dashboard',
+          // New array instance created on every render — simulates DashboardPage.tsx
+          extraInvalidateKeys: [['analytics', org, 'dashboard', 'America/Sao_Paulo']],
+        }),
+      { wrapper: makeWrapper(queryClient), initialProps: { org: 'org-1' } }
+    )
+
+    // Initial mount: channel() called once
+    expect(clientRef.channel).toHaveBeenCalledTimes(1)
+    expect(clientRef.channel).toHaveBeenCalledWith('dashboard:org-1')
+
+    // Mock auto-fires SUBSCRIBED callback, status should already be subscribed
+    expect(result.current.status).toBe('subscribed')
+
+    // Re-render with SAME org but a NEW extraInvalidateKeys array instance
+    act(() => {
+      rerender({ org: 'org-1' })
+    })
+
+    // Channel() must still have been called exactly ONCE — effect did NOT restart
+    expect(clientRef.channel).toHaveBeenCalledTimes(1)
+  })
+
+  it('BUG REPRODUCTION: pre-fix behavior would throw on status re-render with new array reference', () => {
+    const { rerender } = renderHook(
+      ({ org }) =>
+        useOrdersRealtime(org, {
+          channelPrefix: 'dashboard',
+          extraInvalidateKeys: [['dashboard-kpis', org]],
+        }),
+      { wrapper: makeWrapper(queryClient), initialProps: { org: 'org-1' } }
+    )
+
+    // Mock auto-fires SUBSCRIBED callback, status should already be subscribed
+    // Re-render with new array instance (same keys)
+    expect(() => {
+      act(() => {
+        rerender({ org: 'org-1' })
+      })
+    }).not.toThrow()
+
+    // Still only one channel() call
+    expect(clientRef.channel).toHaveBeenCalledTimes(1)
+  })
+
+  it('switches channel when organizationId actually changes (proves dependency still works)', () => {
+    const { rerender } = renderHook(
+      ({ org }) =>
+        useOrdersRealtime(org, {
+          channelPrefix: 'dashboard',
+          extraInvalidateKeys: [['dashboard-kpis', org]],
+        }),
+      { wrapper: makeWrapper(queryClient), initialProps: { org: 'org-1' } }
+    )
+
+    // Initial: org-1
+    expect(clientRef.channel).toHaveBeenCalledTimes(1)
+    expect(clientRef.channel).toHaveBeenCalledWith('dashboard:org-1')
+
+    // Re-render with org-2 — effect SHOULD restart
+    act(() => {
+      rerender({ org: 'org-2' })
+    })
+
+    expect(clientRef.channel).toHaveBeenCalledTimes(2)
+    expect(clientRef.channel).toHaveBeenCalledWith('dashboard:org-2')
+  })
+
+  it('switches channel when channelPrefix actually changes', () => {
+    const { rerender } = renderHook(
+      ({ prefix }) =>
+        useOrdersRealtime('org-1', {
+          channelPrefix: prefix,
+          extraInvalidateKeys: [['dashboard-kpis', 'org-1']],
+        }),
+      { wrapper: makeWrapper(queryClient), initialProps: { prefix: 'dashboard' } }
+    )
+
+    expect(clientRef.channel).toHaveBeenCalledTimes(1)
+    expect(clientRef.channel).toHaveBeenCalledWith('dashboard:org-1')
+
+    act(() => {
+      rerender({ prefix: 'kitchen' })
+    })
+
+    expect(clientRef.channel).toHaveBeenCalledTimes(2)
+    expect(clientRef.channel).toHaveBeenCalledWith('kitchen:org-1')
+  })
+})
