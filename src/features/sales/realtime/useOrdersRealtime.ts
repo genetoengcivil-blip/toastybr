@@ -79,10 +79,12 @@ export function useOrdersRealtime(
         }
       })
 
-    // removeChannel() internally unsubscribes the channel, so a separate
-    // unsubscribe() call is unnecessary and would be a redundant operation.
+    // Call unsubscribe() to start the leave process immediately, then removeChannel
+    // to clean up the registry. Both return promises; we don't await in cleanup
+    // to avoid blocking the main thread, but we catch to avoid unhandled rejections.
     return () => {
-      supabase.removeChannel(channel)
+      void channel.unsubscribe().catch(() => {})
+      void supabase.removeChannel(channel).catch(() => {})
     }
   }, [organizationId, channelPrefix, queryClient])
 
