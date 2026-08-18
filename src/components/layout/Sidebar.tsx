@@ -16,12 +16,13 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
+  Store,
+  X,
 } from 'lucide-react'
 import { useCurrentOrganization } from '../../features/auth/context'
 import { cn } from '../../lib/utils'
 import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip'
 import { ScrollArea } from '../ui/scroll-area'
-import { Separator } from '../ui/separator'
 import { Button } from '../ui/button'
 
 interface NavItem {
@@ -59,6 +60,11 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
   const location = useLocation()
   const { organization } = useCurrentOrganization()
 
+  const isActive = (href: string) => {
+    if (href === '/') return location.pathname === '/'
+    return location.pathname === href || location.pathname.startsWith(`${href}/`)
+  }
+
   const grouped = navigation.reduce<Record<string, NavItem[]>>((acc, item) => {
     if (!acc[item.group]) acc[item.group] = []
     acc[item.group].push(item)
@@ -67,13 +73,20 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
 
   const sidebarContent = (
     <div className="flex h-full flex-col">
-      <div className="flex h-14 items-center justify-between px-4 border-b border-[hsl(var(--sidebar-border))]">
+      {/* Brand */}
+      <div className="flex h-16 items-center justify-between px-4 border-b border-[hsl(var(--sidebar-border))]">
         {!collapsed && (
-          <div className="flex items-center gap-2">
-            <div className="h-7 w-7 rounded-md bg-[hsl(var(--sidebar-accent))] flex items-center justify-center">
-              <span className="text-white text-xs font-bold">T</span>
+          <div className="flex items-center gap-2.5">
+            <div className="relative">
+              <div className="h-8 w-8 rounded-md bg-gradient-to-br from-[hsl(var(--brand-from))] to-[hsl(var(--brand-to))] flex items-center justify-center shadow-sm">
+                <Store className="h-4 w-4 text-white" />
+              </div>
+              <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-[hsl(var(--sidebar-accent))] border-2 border-[hsl(var(--sidebar-bg))]" />
             </div>
-            <span className="text-[hsl(var(--sidebar-fg))] font-semibold text-sm tracking-tight">Toasty OS</span>
+            <div className="flex flex-col">
+              <span className="text-[hsl(var(--sidebar-fg))] font-semibold text-sm tracking-tight leading-none">Toasty OS</span>
+              <span className="text-[10px] text-[hsl(var(--sidebar-muted))] tracking-wide mt-0.5">Restaurant OS</span>
+            </div>
           </div>
         )}
         <Button
@@ -86,38 +99,47 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
         </Button>
       </div>
 
+      {/* Organization context (mobile only) */}
       {organization && !collapsed && (
-        <div className="px-4 py-3 border-b border-[hsl(var(--sidebar-border))]">
+        <div className="md:hidden px-4 py-3 border-b border-[hsl(var(--sidebar-border))]">
           <p className="text-xs text-[hsl(var(--sidebar-muted))] truncate">{organization.name}</p>
         </div>
       )}
 
-      <ScrollArea className="flex-1 py-2">
+      <ScrollArea className="flex-1 px-3 py-4">
         {Object.entries(grouped).map(([group, items], groupIndex) => (
-          <div key={group}>
-            {groupIndex > 0 && <Separator className="my-2 mx-4 w-auto" />}
+          <div key={group} className={groupIndex > 0 ? 'mt-6' : ''}>
             {!collapsed && (
-              <p className="px-4 py-1.5 text-[10px] font-semibold uppercase tracking-widest text-[hsl(var(--sidebar-muted))]">
+              <p className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-widest text-[hsl(var(--sidebar-muted))]">
                 {group}
               </p>
             )}
-            <div className="space-y-0.5 px-2">
+            <div className="space-y-1">
               {items.map((item) => {
-                const isActive = location.pathname === item.href
+                const active = isActive(item.href)
                 const Icon = item.icon
 
                 const linkClasses = cn(
-                  'flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors',
-                  collapsed && 'justify-center px-2',
-                  isActive
-                    ? 'bg-[hsl(var(--sidebar-accent))]/10 text-[hsl(var(--sidebar-accent))]'
+                  'group relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200',
+                  collapsed && 'justify-center px-0',
+                  active
+                    ? 'bg-[hsl(var(--sidebar-accent))]/15 text-[hsl(var(--sidebar-fg))]'
                     : 'text-[hsl(var(--sidebar-muted))] hover:text-[hsl(var(--sidebar-fg))] hover:bg-[hsl(var(--sidebar-fg))]/5'
                 )
 
                 const content = (
                   <>
-                    <Icon size={18} className={isActive ? 'text-[hsl(var(--sidebar-accent))]' : ''} />
-                    {!collapsed && <span>{item.name}</span>}
+                    {active && (
+                      <div className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-1 rounded-r-full bg-[hsl(var(--sidebar-accent))]" />
+                    )}
+                    <Icon
+                      size={18}
+                      className={cn(
+                        'shrink-0 transition-colors',
+                        active ? 'text-[hsl(var(--sidebar-accent))]' : 'group-hover:text-[hsl(var(--sidebar-fg))]'
+                      )}
+                    />
+                    {!collapsed && <span className="truncate">{item.name}</span>}
                   </>
                 )
 
@@ -129,7 +151,9 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
                           {content}
                         </Link>
                       </TooltipTrigger>
-                      <TooltipContent side="right">{item.name}</TooltipContent>
+                      <TooltipContent side="right" className="font-medium">
+                        {item.name}
+                      </TooltipContent>
                     </Tooltip>
                   )
                 }
@@ -144,6 +168,20 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
           </div>
         ))}
       </ScrollArea>
+
+      {/* Footer / collapsed version toggle for mobile */}
+      {collapsed && (
+        <div className="md:hidden p-3 border-t border-[hsl(var(--sidebar-border))]">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onMobileClose}
+            className="h-8 w-8 text-[hsl(var(--sidebar-muted))] hover:text-[hsl(var(--sidebar-fg))] mx-auto"
+          >
+            <X size={16} />
+          </Button>
+        </div>
+      )}
     </div>
   )
 
@@ -151,13 +189,13 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
     <>
       {/* Mobile overlay */}
       {mobileOpen && (
-        <div className="fixed inset-0 z-40 bg-black/50 md:hidden" onClick={onMobileClose} />
+        <div className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm md:hidden" onClick={onMobileClose} />
       )}
 
       {/* Mobile sidebar */}
       <aside
         className={cn(
-          'fixed left-0 top-0 z-50 h-screen w-64 bg-[hsl(var(--sidebar-bg))] text-[hsl(var(--sidebar-fg))] transition-transform duration-300 md:hidden',
+          'fixed left-0 top-0 z-50 h-screen w-72 bg-[hsl(var(--sidebar-bg))] text-[hsl(var(--sidebar-fg))] transition-transform duration-300 md:hidden',
           mobileOpen ? 'translate-x-0' : '-translate-x-full'
         )}
       >
@@ -167,7 +205,7 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
       {/* Desktop sidebar */}
       <aside
         className={cn(
-          'fixed left-0 top-0 z-40 h-screen bg-[hsl(var(--sidebar-bg))] text-[hsl(var(--sidebar-fg))] transition-all duration-300 hidden md:flex flex-col',
+          'fixed left-0 top-0 z-40 h-screen bg-[hsl(var(--sidebar-bg))] text-[hsl(var(--sidebar-fg))] transition-all duration-300 hidden md:flex flex-col border-r border-[hsl(var(--sidebar-border))]',
           collapsed ? 'w-16' : 'w-64'
         )}
       >
