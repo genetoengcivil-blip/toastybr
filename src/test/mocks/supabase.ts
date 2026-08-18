@@ -44,6 +44,10 @@ function createMockRealtimeChannel() {
     if (cb) cb(subscribeStatus)
     return channel
   })
+  channel.unsubscribe = vi.fn(() => {
+    channel._setStatus('CLOSED')
+    return channel
+  })
   channel._setStatus = (status: string) => {
     subscribeStatus = status
   }

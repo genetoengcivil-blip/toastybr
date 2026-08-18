@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { QueryKey } from '@tanstack/react-query'
 import { useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../../../lib/supabase/client'
@@ -24,13 +24,11 @@ export function useOrdersRealtime(
 ) {
   const queryClient = useQueryClient()
   const [status, setStatus] = useState<RealtimeStatus>('connecting')
-  const channelIdRef = useRef(0)
 
   useEffect(() => {
     if (!organizationId) return
 
-    const channelName = `${channelPrefix}:${organizationId}:${channelIdRef.current}`
-    channelIdRef.current++
+    const channelName = `${channelPrefix}:${organizationId}`
 
     const invalidate = () => {
       queryClient.invalidateQueries({ queryKey: ['sales-orders', organizationId] })
@@ -60,6 +58,7 @@ export function useOrdersRealtime(
       })
 
     return () => {
+      channel.unsubscribe()
       supabase.removeChannel(channel)
     }
   }, [organizationId, channelPrefix, queryClient, extraInvalidateKeys])

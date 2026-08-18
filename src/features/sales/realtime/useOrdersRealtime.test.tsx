@@ -30,12 +30,12 @@ describe('useOrdersRealtime (items 42-48)', () => {
     queryClient = createTestQueryClient()
   })
 
-  it('subscribes to sales_orders for the organization with a deterministic channel prefix', () => {
+  it('subscribes to sales_orders for the organization with a deterministic channel name', () => {
     renderHook(() => useOrdersRealtime('org-1'), { wrapper: makeWrapper(queryClient) })
 
     expect(clientRef.channel).toHaveBeenCalled()
     const channelNameArg = clientRef.channel.mock.calls[0][0]
-    expect(channelNameArg).toMatch(/^orders:org-1:/)
+    expect(channelNameArg).toBe('orders:org-1')
     const channel = clientRef.channel.mock.results[0].value as any
     expect(channel.on).toHaveBeenCalledWith(
       'postgres_changes',
@@ -102,7 +102,7 @@ describe('useOrdersRealtime (items 42-48)', () => {
     })
     expect(clientRef.channel).toHaveBeenCalledTimes(1)
     const channelNameArg1 = clientRef.channel.mock.calls[0][0]
-    expect(channelNameArg1).toMatch(/^orders:org-1:/)
+    expect(channelNameArg1).toBe('orders:org-1')
 
     // Second render with org-2
     act(() => {
@@ -110,7 +110,7 @@ describe('useOrdersRealtime (items 42-48)', () => {
     })
     expect(clientRef.channel).toHaveBeenCalledTimes(2)
     const channelNameArg2 = clientRef.channel.mock.calls[1][0]
-    expect(channelNameArg2).toMatch(/^orders:org-2:/)
+    expect(channelNameArg2).toBe('orders:org-2')
     expect(channelNameArg1).not.toBe(channelNameArg2)
   })
 
