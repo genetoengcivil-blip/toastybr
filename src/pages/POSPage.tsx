@@ -9,6 +9,9 @@ import { CouponInput } from '../features/sales/components/CouponInput'
 import { PaymentSheet } from '../features/sales/components/PaymentSheet'
 import type { CartItem } from '../features/sales/types'
 import type { Customer, Coupon, ProductWithCategory } from '../lib/supabase/types'
+import { Card } from '../components/ui/card'
+import { Badge } from '../components/ui/badge'
+import { Separator } from '../components/ui/separator'
 
 export default function POSPage() {
   const { organization } = useCurrentOrganization()
@@ -99,78 +102,98 @@ export default function POSPage() {
     <div className="flex gap-4 h-[calc(100vh-8rem)]">
       {/* Left: Product grid */}
       <div className="flex-1 flex flex-col min-w-0">
-        <div className="flex items-center gap-2 mb-4">
-          <div className="relative flex-1">
-            <Search
-              size={16}
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-[hsl(var(--muted-foreground))]"
-            />
+        <div className="flex items-center justify-between space-y-2 mb-4">
+          <h2 className="text-heading">Produtos</h2>
+          <div className="flex items-center gap-2">
             <Input
               placeholder="Buscar produto..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-9"
+              className="w-[250px] pl-9"
             />
+            <Button variant="outline" size="icon" className="hover-lift" onClick={() => setSearch('')}>
+              <Search size={18} />
+            </Button>
           </div>
         </div>
 
-        <div className="flex gap-2 mb-4 overflow-x-auto pb-1">
+        <div className="flex gap-2 mb-4 overflow-x-auto pb-1 border-b border-[hsl(var(--border))]">
           {categories.map((cat) => (
-            <button
+            <Button
               key={cat}
+              variant={activeCategory === cat ? 'default' : 'outline'}
+              size="sm"
               onClick={() => setActiveCategory(cat)}
-              className={`px-3 py-1.5 rounded-md text-xs font-medium whitespace-nowrap transition-colors ${
+              className={`flex-1 px-3 py-2 rounded-md text-xs font-medium whitespace-nowrap transition-all duration-200 ${
                 activeCategory === cat
-                  ? 'bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))]'
-                  : 'bg-[hsl(var(--muted))] text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))]/80'
+                  ? 'bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] hover:bg-[hsl(var(--primary))]/90'
+                  : 'bg-[hsl(var(--background))] text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))]/50'
               }`}
             >
               {cat}
-            </button>
+            </Button>
           ))}
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+        <div className="flex-1 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((product: ProductWithCategory) => (
-            <button
+            <Card
               key={product.id}
+              variant="elevated"
+              padding="lg"
+              className="cursor-pointer hover-lift transition-all duration-200"
               onClick={() => addToCart(product)}
-              className="p-3 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--card))] hover:border-[hsl(var(--primary))] transition-colors text-left"
             >
-              <div className="h-16 rounded-md bg-[hsl(var(--muted))] mb-2 flex items-center justify-center">
-                <ShoppingBag size={20} className="text-[hsl(var(--muted-foreground))]" />
+              <div className="flex items-center justify-center h-24 mb-3">
+                <ShoppingBag size={24} className="text-[hsl(var(--muted-foreground))]" />
               </div>
-              <p className="text-sm font-medium truncate">{product.name}</p>
-              <p className="text-sm font-semibold text-[hsl(var(--primary))]">
-                R$ {product.price.toFixed(2)}
-              </p>
-            </button>
+              <h3 className="text-title truncate">{product.name}</h3>
+              <div className="flex items-baseline gap-2 mt-2">
+                <span className="text-metric font-medium text-[hsl(var(--primary))]">
+                  R$ {product.price.toFixed(2)}
+                </span>
+                <Badge variant="outline">
+                  {product.menu_categories?.name ?? 'Sem categoria'}
+                </Badge>
+              </div>
+            </Card>
           ))}
           {filtered.length === 0 && (
-            <div className="col-span-full text-center py-8 text-sm text-[hsl(var(--muted-foreground))]">
-              Nenhum produto encontrado
+            <div className="col-span-full text-center py-12 text-[hsl(var(--muted-foreground))] text-sm">
+              <ShoppingBag size={32} className="mx-auto mb-4 opacity-50" />
+              <p>Nenhum produto encontrado</p>
+              <p className="mt-2 text-[hsl(var(--muted-foreground))]/80">
+                Tente ajustar os filtros de busca ou categoria
+              </p>
             </div>
           )}
         </div>
       </div>
 
       {/* Right: Cart + Customer + Coupon */}
-      <div className="w-80 hidden lg:flex flex-col border border-[hsl(var(--border))] rounded-lg bg-[hsl(var(--card))]">
-        <div className="p-4 border-b border-[hsl(var(--border))]">
-          <h2 className="font-semibold text-sm mb-3">Pedido atual</h2>
+      <div className="w-80 hidden lg:flex flex-col border border-[hsl(var(--border))] rounded-lg bg-[hsl(var(--card))] shadow-sm">
+        <div className="p-6 space-y-6">
+          <div className="border-b pb-4">
+            <h2 className="text-heading">Pedido atual</h2>
+            <p className="text-sm text-[hsl(var(--muted-foreground))]">
+              {cart.length} item{cart.length !== 1 ? 's' : ''}
+            </p>
+          </div>
 
           {/* Customer selector */}
-          <div className="mb-3">
-            <p className="text-xs font-medium text-[hsl(var(--muted-foreground))] mb-1">Cliente</p>
+          <div className="space-y-2">
+            <p className="text-label font-medium">Cliente</p>
             <CustomerSelector
               selectedCustomer={selectedCustomer}
               onSelect={setSelectedCustomer}
             />
           </div>
 
+          <Separator className="my-4" />
+
           {/* Coupon input */}
-          <div>
-            <p className="text-xs font-medium text-[hsl(var(--muted-foreground))] mb-1">Cupom</p>
+          <div className="space-y-2">
+            <p className="text-label font-medium">Cupom de desconto</p>
             <CouponInput
               organizationId={orgId}
               orderSubtotal={subtotal}
@@ -185,86 +208,108 @@ export default function POSPage() {
               }}
             />
           </div>
-        </div>
 
-        <div className="flex-1 overflow-hidden">
-          {cart.length === 0 ? (
-            <div className="text-center py-8 text-[hsl(var(--muted-foreground))] text-sm">
-              <ShoppingBag size={32} className="mx-auto mb-2 opacity-40" />
-              <p>Nenhum item</p>
-            </div>
-          ) : (
-            <div className="p-4 space-y-3 overflow-y-auto h-full">
-              {cart.map((item) => (
-                <div key={item.product_id} className="flex items-start gap-2">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{item.product_name}</p>
-                    <p className="text-xs text-[hsl(var(--muted-foreground))]">
-                      R$ {item.unit_price.toFixed(2)}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <button
-                      onClick={() => updateQuantity(item.product_id, -1)}
-                      className="h-6 w-6 rounded border border-[hsl(var(--border))] flex items-center justify-center hover:bg-[hsl(var(--muted))]"
-                    >
-                      -
-                    </button>
-                    <span className="w-6 text-center text-sm">{item.quantity}</span>
-                    <button
-                      onClick={() => updateQuantity(item.product_id, 1)}
-                      className="h-6 w-6 rounded border border-[hsl(var(--border))] flex items-center justify-center hover:bg-[hsl(var(--muted))]"
-                    >
-                      +
-                    </button>
-                  </div>
-                  <button
-                    onClick={() => removeFromCart(item.product_id)}
-                    className="text-[hsl(var(--muted-foreground))] hover:text-red-500 text-xs"
+          <Separator className="my-4" />
+
+          <div className="flex-1 overflow-hidden">
+            {cart.length === 0 ? (
+              <div className="text-center py-12 text-[hsl(var(--muted-foreground))] text-sm">
+                <ShoppingBag size={32} className="mx-auto mb-4 opacity-40" />
+                <p>Seu carrinho está vazio</p>
+                <p className="mt-2 text-[hsl(var(--muted-foreground))]/60">
+                  Adicione produtos para começar o pedido
+                </p>
+              </div>
+            ) : (
+              <div className="p-4 space-y-3 overflow-y-auto">
+                {cart.map((item) => (
+                  <Card
+                    key={item.product_id}
+                    variant="outline"
+                    padding="sm"
+                    className="flex items-center gap-4 hover-lift transition-all duration-200"
                   >
-                    ✕
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+                    <div className="flex-shrink-0 h-10 w-10 rounded-md bg-[hsl(var(--muted))]/20 flex items-center justify-center">
+                      <ShoppingBag size={16} className="text-[hsl(var(--muted-foreground))]" />
+                    </div>
+                    <div className="flex-1 min-w-0 space-y-1">
+                      <p className="text-font-medium truncate">{item.product_name}</p>
+                      <p className="text-sm text-[hsl(var(--muted-foreground))]">
+                        R$ {item.unit_price.toFixed(2)} × {item.quantity}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => updateQuantity(item.product_id, -1)}
+                        className="h-8 w-8 rounded-md border border-[hsl(var(--border))] flex items-center justify-center hover:bg-[hsl(var(--muted))]/50 transition-colors duration-200"
+                      >
+                        −
+                      </button>
+                      <span className="w-8 text-center font-medium">{item.quantity}</span>
+                      <button
+                        onClick={() => updateQuantity(item.product_id, 1)}
+                        className="h-8 w-8 rounded-md border border-[hsl(var(--border))] flex items-center justify-center hover:bg-[hsl(var(--muted))]/50 transition-colors duration-200"
+                      >
+                        +
+                      </button>
+                    </div>
+                    <button
+                      onClick={() => removeFromCart(item.product_id)}
+                      className="h-8 w-8 text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--destructive))] transition-colors duration-200"
+                    >
+                      ✕
+                    </button>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
 
-        <div className="p-4 border-t border-[hsl(var(--border))] space-y-3">
-          <div className="flex justify-between text-sm">
-            <span className="text-[hsl(var(--muted-foreground))]">Subtotal</span>
-            <span className="font-medium">R$ {subtotal.toFixed(2)}</span>
-          </div>
-          {couponDiscount > 0 && (
-            <div className="flex justify-between text-sm text-green-600">
-              <span>Cupom</span>
-              <span>- R$ {couponDiscount.toFixed(2)}</span>
+          <Separator className="my-6" />
+
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <span className="text-[hsl(var(--muted-foreground))]">Subtotal</span>
+              <span className="text-2xl font-bold text-[hsl(var(--primary))]">
+                R$ {subtotal.toFixed(2)}
+              </span>
+              {couponDiscount > 0 && (
+                <>
+                  <span className="text-[hsl(var(--muted-foreground))]">Desconto</span>
+                  <span className="text-[hsl(var(--success))] font-medium">
+                    - R$ {couponDiscount.toFixed(2)}
+                  </span>
+                </>
+              )}
+              <span className="text-[hsl(var(--muted-foreground))] font-medium">Total</span>
+              <span className="text-3xl font-bold text-[hsl(var(--primary))]">
+                R$ {total.toFixed(2)}
+              </span>
             </div>
-          )}
-          <div className="flex justify-between text-sm font-semibold border-t pt-2">
-            <span>Total</span>
-            <span>R$ {total.toFixed(2)}</span>
           </div>
-          <Button
-            className="w-full"
-            disabled={cart.length === 0}
-            onClick={() => setShowPayment(true)}
-          >
-            Pagar
-          </Button>
-          <Button
-            variant="outline"
-            className="w-full"
-            disabled={cart.length === 0}
-            onClick={() => {
-              setCart([])
-              setAppliedCoupon(null)
-              setCouponDiscount(0)
-              setSelectedCustomer(null)
-            }}
-          >
-            Limpar
-          </Button>
+
+          <div className="mt-6 space-y-3">
+            <Button
+              className="w-full hover-lift transition-all duration-200"
+              disabled={cart.length === 0}
+              onClick={() => setShowPayment(true)}
+            >
+              Pagar
+            </Button>
+            <Button
+              variant="outline"
+              className="w-full"
+              disabled={cart.length === 0}
+              onClick={() => {
+                setCart([])
+                setAppliedCoupon(null)
+                setCouponDiscount(0)
+                setSelectedCustomer(null)
+              }}
+            >
+              Limpar tudo
+            </Button>
+          </div>
         </div>
       </div>
 
