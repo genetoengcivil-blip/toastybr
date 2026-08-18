@@ -4,8 +4,10 @@ import { Button } from '../components/ui/button'
 import { useKitchenOrders, useAdvanceKitchenStatus } from '../features/sales/hooks/useKitchenOrders'
 import { useCurrentOrganization } from '../features/auth/context'
 import { useOrdersRealtime } from '../features/sales/realtime/useOrdersRealtime'
-import { formatElapsed, canAdvanceStatus, ORDER_STATUS_CONFIG, CHANNEL_LABELS } from '../features/sales/utils/status'
+import { formatElapsed, canAdvanceStatus, ORDER_STATUS_CONFIG } from '../features/sales/utils/status'
 import { toast } from 'sonner'
+import { Card } from '../components/ui/card'
+import { Separator } from '../components/ui/separator'
 
 type ColumnStatus = 'confirmed' | 'preparing' | 'ready'
 
@@ -43,97 +45,111 @@ export default function KitchenPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Cozinha</h1>
-        <div className="flex items-center gap-2">
-          <p className="text-sm text-[hsl(var(--muted-foreground))]">Display de produção</p>
-          <span
-            className={`inline-block h-2 w-2 rounded-full ${
-              realtimeStatus === 'subscribed' ? 'bg-emerald-500' : 'bg-amber-500'
-            }`}
-            aria-label="status de sincronização"
-          />
-          <span className="text-xs text-[hsl(var(--muted-foreground))]">
-            {realtimeStatus === 'subscribed' ? 'Ao vivo' : 'Reconectando…'}
-          </span>
+    <div className="space-y-8">
+      {/* Header */}
+      <div className="flex items-center justify-between space-y-4 md:space-y-0 md:flex-row">
+        <div>
+          <h1 className="text-display">Cozinha</h1>
+          <p className="text-body text-[hsl(var(--muted-foreground))]">
+            Acompanhe o fluxo de preparo dos pedidos em tempo real
+          </p>
         </div>
+        <Button variant="outline" size="icon" onClick={() => window.location.reload()} className="hover-lift">
+          <RefreshCw size={20} />
+        </Button>
       </div>
 
+      {/* Realtime status indicator */}
+      <div className="flex items-center gap-3 mb-4">
+        <div className="h-8 w-8 rounded-md bg-[hsl(var(--muted))]/20 flex items-center justify-center">
+          <Clock size={16} className="text-[hsl(var(--muted-foreground))]" />
+        </div>
+        <span className="text-sm font-medium text-[hsl(var(--muted-foreground))]">
+          Status: {realtimeStatus ?? 'desconectado'}
+        </span>
+      </div>
+
+      {/* Kitchen board */}
       {isLoading ? (
-        <div className="text-center py-12 text-sm text-[hsl(var(--muted-foreground))]">
-          Carregando pedidos...
+        <div className="flex items-center justify-center h-64">
+          <div className="text-sm text-[hsl(var(--muted-foreground))]">Carregando pedidos...</div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {columns.map((col) => {
-            const colOrders = getOrdersByStatus(col.status)
+        <div className="grid gap-6">
+          {columns.map((column) => {
+            const columnOrders = getOrdersByStatus(column.status)
+            const nextStatus = canAdvanceStatus(column.status)
             return (
-              <div key={col.status} className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-sm font-semibold">{col.label}</h2>
-                  <Badge variant="secondary">{colOrders.length}</Badge>
-                </div>
-                <div
-                  className={`rounded-lg border-t-2 ${col.color} bg-[hsl(var(--muted))]/30 p-3 space-y-2 min-h-[200px]`}
-                >
-                  {colOrders.map((order) => {
-                    const nextStatus = canAdvanceStatus(order.status)
-                    return (
-                      <div
-                        key={order.id}
-                        className="p-3 rounded-md bg-[hsl(var(--card))] border border-[hsl(var(--border))] shadow-sm"
-                      >
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="font-semibold text-sm">{order.order_number}</span>
-                          <div className="flex items-center gap-1 text-xs text-[hsl(var(--muted-foreground))]">
-                            <Clock size={12} />
-                            {formatElapsed(order.confirmed_at)}
-                          </div>
-                        </div>
-
-                        <div className="space-y-1 mb-3">
-                          {order.sales_order_items.map((item) => (
-                            <p key={item.id} className="text-xs text-[hsl(var(--muted-foreground))]">
-                              {item.quantity}x {item.product_name}
-                              {item.notes && (
-                                <span className="italic ml-1">({item.notes})</span>
-                              )}
-                            </p>
-                          ))}
-                        </div>
-
-                        <div className="flex items-center justify-between">
-                          <div className="flex gap-2 text-xs text-[hsl(var(--muted-foreground))]">
-                            <span>{CHANNEL_LABELS[order.channel]}</span>
-                            {order.customer_name && (
-                              <>
-                                <span>•</span>
-                                <span>{order.customer_name}</span>
-                              </>
-                            )}
-                          </div>
-                          {nextStatus && (
-                            <Button
-                              size="sm"
-                              className="h-7 text-xs"
-                              onClick={() => handleAdvance(order.id, order.status)}
-                              disabled={advanceStatus.isPending}
-                            >
-                              {ORDER_STATUS_CONFIG[nextStatus]?.label}
-                            </Button>
-                          )}
-                        </div>
+              <Card
+                key={column.status}
+                variant="elevated"
+                padding="lg"
+                className="hover-lift transition-all duration-200"
+              >
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <h2 className="text-heading">{column.label}</h2>
+                    <Badge
+                      variant="outline"
+                      className="ml-2 text-xs"
+                    >
+                      {columnOrders.length}
+                    </Badge>
+                  </div>
+                  <Separator className="my-2" />
+                  <div className="space-y-3">
+                    {columnOrders.length === 0 ? (
+                      <div className="text-center py-8 text-[hsl(var(--muted-foreground))]">
+                        <Clock size={32} className="mx-auto mb-4 opacity-40" />
+                        <p className="mt-2 text-sm">Nenhum pedido nesta etapa</p>
                       </div>
-                    )
-                  })}
-                  {colOrders.length === 0 && (
-                    <div className="text-center py-8 text-sm text-[hsl(var(--muted-foreground))]">
-                      Nenhum pedido
-                    </div>
-                  )}
+                    ) : (
+                      <div className="space-y-2">
+                        {columnOrders.map((order) => (
+                          <Card
+                            key={order.id}
+                            variant="outline"
+                            padding="sm"
+                            className="flex items-center gap-4 hover-lift transition-all duration-200 border-l-4"
+                            style={{ borderColor: column.color }}
+                          >
+                            <div className="flex-shrink-0 h-10 w-10 rounded-md bg-[hsl(var(--muted))]/20 flex items-center justify-center">
+                              <Clock size={16} className="text-[hsl(var(--muted-foreground))]" />
+                            </div>
+                            <div className="flex-1 min-w-0 space-y-1">
+                              <p className="text-font-medium truncate">{order.order_number}</p>
+                              <p className="text-sm text-[hsl(var(--muted-foreground))]">
+                                {order.customer_name ?? 'Cliente anônimo'} • {order.sales_order_items.length} itens
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-2 text-xs">
+                              <Badge
+                                variant={ORDER_STATUS_CONFIG[order.status]?.variant ?? 'default'}
+                                className="text-xs font-medium"
+                              >
+                                {ORDER_STATUS_CONFIG[order.status]?.label ?? order.status}
+                              </Badge>
+                              <span className="text-[hsl(var(--muted-foreground))]">
+                                {formatElapsed(order.confirmed_at)}
+                              </span>
+                            </div>
+                            {nextStatus && (
+                              <Button
+                                variant="default"
+                                size="sm"
+                                className="hover-lift transition-all duration-200"
+                                onClick={() => handleAdvance(order.id, order.status)}
+                              >
+                                Avançar
+                              </Button>
+                            )}
+                          </Card>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
+              </Card>
             )
           })}
         </div>
@@ -141,3 +157,6 @@ export default function KitchenPage() {
     </div>
   )
 }
+
+// Import icons
+import { RefreshCw } from 'lucide-react'
