@@ -1,0 +1,392 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  --background: 0 0% 100%;
+  --foreground: 222.2 84% 4.9%;
+  --card: 0 0% 100%;
+  --card-foreground: 222.2 84% 4.9%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 222.2 84% 4.9%;
+  --primary: 24.6 95% 53.1%;
+  --primary-foreground: 60 9.1% 97.8%;
+  --secondary: 210 40% 96.1%;
+  --secondary-foreground: 222.2 47.4% 11.2%;
+  --muted: 210 40% 96.1%;
+  --muted-foreground: 215.4 16.3% 46.9%;
+  --accent: 210 40% 96.1%;
+  --accent-foreground: 222.2 47.4% 11.2%;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 60 9.1% 97.8%;
+  --border: 214.3 31.8% 91.4%;
+  --input: 214.3 31.8% 91.4%;
+  --ring: 24.6 95% 53.1%;
+  --radius: 0.5rem;
+  --sidebar-bg: 222.2 84% 4.9%;
+  --sidebar-fg: 217.2 32.6% 17.5%;
+  --sidebar-muted: 217.2 32.6% 50%;
+  --sidebar-border: 217.2 32.6% 17.5%;
+  --sidebar-accent: 24.6 95% 53.1%;
+  --brand-from: 16 80% 52%;
+  --brand-to: 20 75% 42%;
+}
+
+.dark {
+  --background: 222.2 84% 4.9%;
+  --foreground: 210 40% 98%;
+  --card: 222.2 84% 4.9%;
+  --card-foreground: 210 40% 98%;
+  --popover: 222.2 84% 4.9%;
+  --popover-foreground: 210 40% 98%;
+  --primary: 24.6 95% 53.1%;
+  --primary-foreground: 60 9.1% 97.8%;
+  --secondary: 217.2 32.6% 17.5%;
+  --secondary-foreground: 210 40% 98%;
+  --muted: 217.2 32.6% 17.5%;
+  --muted-foreground: 215 20.2% 65.1%;
+  --accent: 217.2 32.6% 17.5%;
+  --accent-foreground: 210 40% 98%;
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 210 40% 98%;
+  --border: 217.2 32.6% 17.5%;
+  --input: 217.2 32.6% 17.5%;
+  --ring: 24.6 95% 53.1%;
+  --sidebar-bg: 222.2 84% 2.5%;
+  --sidebar-fg: 217.2 32.6% 60%;
+  --sidebar-muted: 217.2 32.6% 40%;
+  --sidebar-border: 217.2 32.6% 12%;
+  --sidebar-accent: 24.6 95% 53.1%;
+  --brand-from: 16 80% 52%;
+  --brand-to: 20 75% 42%;
+}
+
+* {
+  border-color: hsl(var(--border));
+}
+
+body {
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ═══════════════════════════════════════════
+   AUTH CARD — Reference Architecture
+   ═══════════════════════════════════════════ */
+
+.auth-card {
+  position: relative;
+  width: 100%;
+  max-width: 980px;
+  min-height: 560px;
+  border-radius: 32px;
+  overflow: hidden;
+  background: hsl(var(--card));
+  box-shadow:
+    0 25px 50px -12px rgba(0, 0, 0, 0.15),
+    0 0 0 1px hsl(var(--border));
+}
+
+.dark .auth-card {
+  box-shadow:
+    0 25px 50px -12px rgba(0, 0, 0, 0.4),
+    0 0 0 1px hsl(var(--border));
+}
+
+/* ─── card-bg panels ─── */
+.auth-card-bg {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 55%;
+  z-index: 2;
+  transition: transform 620ms cubic-bezier(0.65, 0, 0.35, 1),
+              opacity 500ms cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+.auth-card-bg-1 {
+  right: 0;
+  left: auto;
+}
+
+.auth-card-bg-2 {
+  left: 0;
+  right: auto;
+  opacity: 0;
+  transform: translateX(100%);
+}
+
+/* signin mode: bg-1 visible on right, bg-2 hidden */
+.auth-card.signin .auth-card-bg-1 {
+  transform: translateX(0);
+  opacity: 1;
+}
+.auth-card.signin .auth-card-bg-2 {
+  transform: translateX(100%);
+  opacity: 0;
+}
+
+/* signup mode: bg-1 slides left, bg-2 slides in from right */
+.auth-card.signup .auth-card-bg-1 {
+  transform: translateX(-100%);
+  opacity: 0;
+}
+.auth-card.signup .auth-card-bg-2 {
+  transform: translateX(0);
+  opacity: 1;
+}
+
+/* ─── logo / brand elements ─── */
+.auth-logo {
+  position: absolute;
+  z-index: 3;
+  transition: transform 600ms cubic-bezier(0.65, 0, 0.35, 1),
+              opacity 400ms cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+.auth-logo-1 {
+  top: 12%;
+  left: 50%;
+  transform: translateX(-50%) translateX(-20px);
+  opacity: 0;
+}
+
+.auth-logo-2 {
+  top: 12%;
+  left: 50%;
+  transform: translateX(-50%) translateX(20px);
+  opacity: 0;
+}
+
+.auth-card.signin .auth-logo-1 {
+  transform: translateX(-50%) translateX(0);
+  opacity: 1;
+}
+.auth-card.signin .auth-logo-2 {
+  transform: translateX(-50%) translateX(20px);
+  opacity: 0;
+}
+
+.auth-card.signup .auth-logo-1 {
+  transform: translateX(-50%) translateX(-20px);
+  opacity: 0;
+}
+.auth-card.signup .auth-logo-2 {
+  transform: translateX(-50%) translateX(0);
+  opacity: 1;
+}
+
+/* ─── form panels ─── */
+.auth-form-panel {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 50%;
+  z-index: 4;
+  display: grid;
+  place-items: center;
+}
+
+.auth-form-panel-left {
+  left: 0;
+}
+
+.auth-form-panel-right {
+  right: 0;
+}
+
+.auth-form-inner {
+  width: 100%;
+  max-width: 360px;
+  padding: 0 32px;
+  opacity: 0;
+  transform: translateX(-40px);
+  transition: opacity 380ms cubic-bezier(0.65, 0, 0.35, 1),
+              transform 380ms cubic-bezier(0.65, 0, 0.35, 1);
+  pointer-events: none;
+}
+
+.auth-form-inner.active {
+  opacity: 1;
+  transform: translateX(0);
+  pointer-events: auto;
+}
+
+.auth-form-inner.exit-left {
+  opacity: 0;
+  transform: translateX(-40px);
+}
+
+.auth-form-inner.exit-right {
+  opacity: 0;
+  transform: translateX(40px);
+}
+
+.auth-form-inner.enter-right {
+  opacity: 0;
+  transform: translateX(40px);
+}
+
+.auth-form-inner.enter-left {
+  opacity: 0;
+  transform: translateX(-40px);
+}
+
+/* ─── floating decorative shapes ─── */
+.auth-shape {
+  position: absolute;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  pointer-events: none;
+}
+
+.auth-shape-line {
+  position: absolute;
+  width: 1px;
+  background: rgba(255, 255, 255, 0.1);
+  pointer-events: none;
+}
+
+@keyframes auth-float {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-8px) scale(1.02); }
+}
+
+@keyframes auth-float-delay {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-6px) scale(1.01); }
+}
+
+@keyframes auth-float-slow {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+.auth-float { animation: auth-float 6s ease-in-out infinite; }
+.auth-float-delay { animation: auth-float-delay 6s ease-in-out 2s infinite; }
+.auth-float-slow { animation: auth-float-slow 8s ease-in-out 1s infinite; }
+
+/* ─── mobile ─── */
+@media (max-width: 767px) {
+  .auth-card {
+    max-width: 420px;
+    min-height: auto;
+    border-radius: 20px;
+  }
+
+  /* Hide both card-bg panels on mobile — use static brand strip in component */
+  .auth-card-bg {
+    display: none !important;
+  }
+
+  .auth-logo {
+    position: relative;
+    top: auto;
+    left: auto;
+    transform: none !important;
+    opacity: 1 !important;
+  }
+
+  .auth-form-panel {
+    position: relative;
+    width: 100%;
+    left: auto;
+    right: auto;
+  }
+
+  .auth-form-inner {
+    width: 100%;
+    padding: 24px 24px 32px;
+  }
+
+  .auth-form-inner.active {
+    opacity: 1;
+    transform: none;
+  }
+
+  .auth-form-inner.exit-left,
+  .auth-form-inner.exit-right,
+  .auth-form-inner.enter-right,
+  .auth-form-inner.enter-left {
+    transform: translateY(12px);
+  }
+
+  .auth-switch-link {
+    position: relative;
+    bottom: auto;
+  }
+}
+
+/* ─── reduced motion ─── */
+@media (prefers-reduced-motion: reduce) {
+  .auth-card-bg,
+  .auth-logo,
+  .auth-form-inner,
+  .auth-shape,
+  .auth-shape-line {
+    transition-duration: 80ms !important;
+  }
+}
+
+/* ─── switch link ─── */
+.auth-switch-link {
+  position: absolute;
+  bottom: 16px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  z-index: 5;
+}
+
+/* ═══════════════════════════════════════════
+   ONBOARDING CARD
+   ═══════════════════════════════════════════ */
+
+.onboarding-card {
+  position: relative;
+  width: 100%;
+  max-width: 980px;
+  min-height: 520px;
+  border-radius: 32px;
+  overflow: hidden;
+  background: hsl(var(--card));
+  box-shadow:
+    0 25px 50px -12px rgba(0, 0, 0, 0.15),
+    0 0 0 1px hsl(var(--border));
+}
+
+.dark .onboarding-card {
+  box-shadow:
+    0 25px 50px -12px rgba(0, 0, 0, 0.4),
+    0 0 0 1px hsl(var(--border));
+}
+
+@media (max-width: 767px) {
+  .onboarding-card {
+    max-width: 420px;
+    min-height: auto;
+    border-radius: 20px;
+  }
+}
+
+/* ═══════════════════════════════════════════
+   AUTH ANIMATE IN (onboarding)
+   ═══════════════════════════════════════════ */
+
+@keyframes auth-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.auth-animate-in {
+  animation: auth-fade-in 0.3s ease-out;
+}
