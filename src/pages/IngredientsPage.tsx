@@ -17,9 +17,10 @@ import { useCurrentOrganization } from '../features/auth/context'
 import { toast } from 'sonner'
 import type { Ingredient } from '../lib/supabase/types'
 import { INGREDIENT_UNITS } from '../lib/supabase/types'
+import { Card } from '../components/ui/card'
 
-function formatPrice(value: number): string {
-  return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+function getUnitLabel(unit: string): string {
+  return INGREDIENT_UNITS.find((u) => u.value === unit)?.label ?? unit
 }
 
 function getUnitLabel(unit: string): string {
@@ -68,17 +69,23 @@ export default function IngredientsPage() {
     })
   }
 
+  // Loading state
   if (isLoading) {
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <div>
-            <div className="h-8 w-32 rounded bg-[hsl(var(--muted))]" />
-            <div className="h-4 w-48 mt-2 rounded bg-[hsl(var(--muted))]" />
+          <div className="space-y-2">
+            <div className="w-32 h-8 rounded bg-[hsl(var(--muted))] animate-pulse" />
+            <div className="w-48 h-4 rounded bg-[hsl(var(--muted))] animate-pulse" />
+          </div>
+          <div className="space-y-2">
+            <div className="w-24 h-6 rounded-full bg-[hsl(var(--muted))] animate-pulse" />
+            <div className="w-32 h-6 rounded-full bg-[hsl(var(--muted))] animate-pulse" />
+            <div className="w-20 h-6 rounded-full bg-[hsl(var(--muted))] animate-pulse" />
           </div>
         </div>
-        <div className="border rounded-lg">
-          <div className="h-64" />
+        <div className="border rounded-lg bg-[hsl(var(--background))]">
+          <div className="h-64 rounded bg-[hsl(var(--muted))]/20" />
         </div>
       </div>
     )
@@ -87,11 +94,11 @@ export default function IngredientsPage() {
   const isEmpty = ingredients.length === 0
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Ingredientes</h1>
-          <p className="text-sm text-[hsl(var(--muted-foreground))]">
+        <div className="space-y-2">
+          <h1 className="text-display">Ingredientes</h1>
+          <p className="text-body text-[hsl(var(--muted-foreground))]">
             Gerencie ingredientes e custos unitários
           </p>
         </div>
@@ -101,40 +108,46 @@ export default function IngredientsPage() {
               setEditing(null)
               setDialogOpen(true)
             }}
+            variant="default"
+            className="hover-lift"
           >
-            <Plus size={16} className="mr-2" />
+            <Plus size={16} className="mr-2 h-4 w-4" />
             Novo ingrediente
           </Button>
         )}
       </div>
 
       {isEmpty ? (
-        <div className="flex flex-col items-center justify-center py-20 text-center">
-          <div className="rounded-full bg-[hsl(var(--muted))] p-4 mb-4">
+        <div className="flex flex-col items-center justify-center py-12 text-center">
+          <div className="w-48 h-48 rounded-full bg-[hsl(var(--muted))]/20 flex items-center justify-center mb-6">
             <Wheat size={32} className="text-[hsl(var(--muted-foreground))]" />
           </div>
-          <h2 className="text-lg font-semibold mb-1">Nenhum ingrediente</h2>
-          <p className="text-sm text-[hsl(var(--muted-foreground))] mb-6 max-w-sm">
+          <h2 className="text-heading">Nenhum ingrediente</h2>
+          <p className="text-body text-[hsl(var(--muted-foreground))] mb-6 max-w-xl">
             Cadastre ingredientes para começar a controlar estoque e custos.
           </p>
           {isAdmin && (
-            <Button
-              onClick={() => {
-                setEditing(null)
-                setDialogOpen(true)
-              }}
-            >
-              <Plus size={16} className="mr-2" />
-              Cadastrar primeiro ingrediente
-            </Button>
+            <div className="flex items-center gap-4">
+              <Button
+                onClick={() => {
+                  setEditing(null)
+                  setDialogOpen(true)
+                }}
+                variant="outline"
+                className="hover-lift"
+              >
+                <Plus size={16} className="mr-2 h-4 w-4" />
+                Cadastrar primeiro ingrediente
+              </Button>
+            </div>
           )}
         </div>
       ) : (
         <>
-          <div className="relative max-w-sm">
+          <div className="relative w-64 mb-6">
             <Search
               size={16}
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-[hsl(var(--muted-foreground))]"
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-[hsl(var(--muted-foreground))] h-4 w-4"
             />
             <Input
               placeholder="Buscar ingrediente..."
@@ -144,15 +157,27 @@ export default function IngredientsPage() {
             />
           </div>
 
-          <div className="border rounded-lg">
+          <div className="border rounded-lg bg-[hsl(var(--card))]">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Ingrediente</TableHead>
-                  <TableHead>Unidade</TableHead>
-                  <TableHead>Custo/un</TableHead>
-                  <TableHead>Status</TableHead>
-                  {isAdmin && <TableHead className="w-24">Ações</TableHead>}
+                  <TableHead className="text-left px-6 py-3 text-label text-[hsl(var(--muted-foreground))] uppercase tracking-wider">
+                    Ingrediente
+                  </TableHead>
+                  <TableHead className="text-left px-6 py-3 text-label text-[hsl(var(--muted-foreground))] uppercase tracking-wider">
+                    Unidade
+                  </TableHead>
+                  <TableHead className="text-left px-6 py-3 text-label text-[hsl(var(--muted-foreground))] uppercase tracking-wider">
+                    Custo/un
+                  </TableHead>
+                  <TableHead className="text-left px-6 py-3 text-label text-[hsl(var(--muted-foreground))] uppercase tracking-wider">
+                    Status
+                  </TableHead>
+                  {isAdmin && (
+                    <TableHead className="text-right px-6 py-3 text-label text-[hsl(var(--muted-foreground))] uppercase tracking-wider w-16">
+                      Ações
+                    </TableHead>
+                  )}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -167,44 +192,56 @@ export default function IngredientsPage() {
                   </TableRow>
                 ) : (
                   filtered.map((ing) => (
-                    <TableRow key={ing.id}>
-                      <TableCell className="font-medium">{ing.name}</TableCell>
-                      <TableCell>{getUnitLabel(ing.unit)}</TableCell>
-                      <TableCell>{formatPrice(ing.cost_per_unit)}</TableCell>
-                      <TableCell>
-                        <Badge variant={ing.is_active ? 'success' : 'secondary'}>
+                    <TableRow
+                      key={ing.id}
+                      className="cursor-pointer hover:bg-[hsl(var(--muted))]/50 transition-colors duration-200"
+                    >
+                      <TableCell className="px-6 py-4 text-font-medium whitespace-nowrap">
+                        {ing.name}
+                      </TableCell>
+                      <TableCell className="px-6 py-4 text-sm whitespace-nowrap">
+                        {getUnitLabel(ing.unit)}
+                      </TableCell>
+                      <TableCell className="px-6 py-4 text-xs font-metric whitespace-nowrap">
+                        R$ {ing.cost_per_unit.toFixed(2)}
+                      </TableCell>
+                      <TableCell className="px-6 py-4 text-sm whitespace-nowrap">
+                        <Badge
+                          variant={ing.is_active ? 'success' : 'secondary'}
+                          className="text-xs font-medium"
+                        >
                           {ing.is_active ? 'Ativo' : 'Inativo'}
                         </Badge>
                       </TableCell>
                       {isAdmin && (
-                        <TableCell>
-                          <div className="flex items-center gap-1">
-                            <button
-                              onClick={() => {
-                                setEditing(ing)
-                                setDialogOpen(true)
-                              }}
-                              className="p-1 hover:bg-[hsl(var(--muted))] rounded"
-                            >
-                              <Edit size={14} />
-                            </button>
-                            <button
-                              onClick={() => handleToggle(ing)}
-                              className="p-1 hover:bg-[hsl(var(--muted))] rounded"
-                            >
-                              {ing.is_active ? (
-                                <ToggleRight size={14} className="text-emerald-500" />
-                              ) : (
-                                <ToggleLeft size={14} />
-                              )}
-                            </button>
-                            <button
-                              onClick={() => handleDelete(ing)}
-                              className="p-1 hover:bg-[hsl(var(--muted))] rounded text-[hsl(var(--destructive))]"
-                            >
-                              <Trash2 size={14} />
-                            </button>
-                          </div>
+                        <TableCell className="px-6 py-4 text-sm whitespace-nowrap flex items-center gap-2">
+                          <button
+                            onClick={() => {
+                              setEditing(ing)
+                              setDialogOpen(true)
+                            }}
+                            className="p-1 hover:bg-[hsl(var(--muted))]/50 rounded hover-lift transition-all duration-200"
+                            title="Editar"
+                          >
+                            <Edit size={14} className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => handleToggle(ing)}
+                            className="p-1 hover:bg-[hsl(var(--muted))]/50 rounded hover-lift transition-all duration-200"
+                          >
+                            {ing.is_active ? (
+                              <ToggleRight size={14} className="h-4 w-4 text-emerald-500" />
+                            ) : (
+                              <ToggleLeft size={14} className="h-4 w-4" />
+                            )}
+                          </button>
+                          <button
+                            onClick={() => handleDelete(ing)}
+                            className="p-1 hover:bg-[hsl(var(--muted))]/50 rounded hover-lift transition-all duration-200 text-[hsl(var(--destructive))]"
+                            title="Excluir"
+                          >
+                            <Trash2 size={14} className="h-4 w-4" />
+                          </button>
                         </TableCell>
                       )}
                     </TableRow>
