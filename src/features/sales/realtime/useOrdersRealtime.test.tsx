@@ -35,7 +35,7 @@ describe('useOrdersRealtime (items 42-48)', () => {
 
     expect(clientRef.channel).toHaveBeenCalled()
     const channelNameArg = clientRef.channel.mock.calls[0][0]
-    expect(channelNameArg).toBe('orders:org-1')
+    expect(channelNameArg).toMatch(/^orders:org-1:\d+$/)
     const channel = clientRef.channel.mock.results[0].value as any
     expect(channel.on).toHaveBeenCalledWith(
       'postgres_changes',
@@ -102,7 +102,7 @@ describe('useOrdersRealtime (items 42-48)', () => {
     })
     expect(clientRef.channel).toHaveBeenCalledTimes(1)
     const channelNameArg1 = clientRef.channel.mock.calls[0][0]
-    expect(channelNameArg1).toBe('orders:org-1')
+    expect(channelNameArg1).toMatch(/^orders:org-1:\d+$/)
 
     // Second render with org-2
     act(() => {
@@ -110,7 +110,7 @@ describe('useOrdersRealtime (items 42-48)', () => {
     })
     expect(clientRef.channel).toHaveBeenCalledTimes(2)
     const channelNameArg2 = clientRef.channel.mock.calls[1][0]
-    expect(channelNameArg2).toBe('orders:org-2')
+    expect(channelNameArg2).toMatch(/^orders:org-2:\d+$/)
     expect(channelNameArg1).not.toBe(channelNameArg2)
   })
 
@@ -234,7 +234,7 @@ describe('useOrdersRealtime - unstable options dependency regression (V3)', () =
 
     // Initial mount: channel() called once
     expect(clientRef.channel).toHaveBeenCalledTimes(1)
-    expect(clientRef.channel).toHaveBeenCalledWith('dashboard:org-1')
+    expect(clientRef.channel.mock.calls[0][0]).toMatch(/^dashboard:org-1:\d+$/)
 
     // Mock auto-fires SUBSCRIBED callback, status should already be subscribed
     expect(result.current.status).toBe('subscribed')
@@ -282,7 +282,7 @@ describe('useOrdersRealtime - unstable options dependency regression (V3)', () =
 
     // Initial: org-1
     expect(clientRef.channel).toHaveBeenCalledTimes(1)
-    expect(clientRef.channel).toHaveBeenCalledWith('dashboard:org-1')
+    expect(clientRef.channel.mock.calls[0][0]).toMatch(/^dashboard:org-1:\d+$/)
 
     // Re-render with org-2 — effect SHOULD restart
     act(() => {
@@ -290,7 +290,7 @@ describe('useOrdersRealtime - unstable options dependency regression (V3)', () =
     })
 
     expect(clientRef.channel).toHaveBeenCalledTimes(2)
-    expect(clientRef.channel).toHaveBeenCalledWith('dashboard:org-2')
+    expect(clientRef.channel.mock.calls[1][0]).toMatch(/^dashboard:org-2:\d+$/)
   })
 
   it('switches channel when channelPrefix actually changes', () => {
@@ -304,13 +304,13 @@ describe('useOrdersRealtime - unstable options dependency regression (V3)', () =
     )
 
     expect(clientRef.channel).toHaveBeenCalledTimes(1)
-    expect(clientRef.channel).toHaveBeenCalledWith('dashboard:org-1')
+    expect(clientRef.channel.mock.calls[0][0]).toMatch(/^dashboard:org-1:\d+$/)
 
     act(() => {
       rerender({ prefix: 'kitchen' })
     })
 
     expect(clientRef.channel).toHaveBeenCalledTimes(2)
-    expect(clientRef.channel).toHaveBeenCalledWith('kitchen:org-1')
+    expect(clientRef.channel.mock.calls[1][0]).toMatch(/^kitchen:org-1:\d+$/)
   })
 })

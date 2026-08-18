@@ -3,6 +3,8 @@ import type { QueryKey } from '@tanstack/react-query'
 import { useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../../../lib/supabase/client'
 
+let realtimeChannelSequence = 0
+
 export type RealtimeStatus = 'connecting' | 'subscribed' | 'error' | 'closed'
 
 export interface UseOrdersRealtimeOptions {
@@ -44,7 +46,14 @@ export function useOrdersRealtime(
   useEffect(() => {
     if (!organizationId) return
 
-    const channelName = `${channelPrefix}:${organizationId}`
+    // Module-level monotonic sequence guarantees a UNIQUE topic per effect
+    // instance. Two concurrent hook instances (or a remount that happens
+    // before the previous cleanup's async removeChannel resolves) never reuse
+    // the same Supabase topic, so `.on()` is never called on a joined channel.
+    // The business identity (filter `organization_id=eq.<organizationId>`) is
+    // unchanged — only the channel name is made unique per subscription.
+    const channelInstanceId = ++realtimeChannelSequence
+    const channelName = `${channelPrefix}:${organizationId}:${channelInstanceId}`
 
     const invalidate = () => {
       queryClient.invalidateQueries({ queryKey: ['sales-orders', organizationId] })
